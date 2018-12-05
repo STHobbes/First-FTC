@@ -155,7 +155,7 @@ public abstract class MecanumBase extends LinearOpMode {
   
   /**
    * Set speeds based on the abstraction of robot motion being a combination
-   * of forward, sideways, and rotation rotion in the range -1 to 1 where
+   * of forward, sideways, and rotation in the range -1 to 1 where
    * -1 is the fastest the robot can move in the negative direction, 0 is
    * stopped for that direction.
    * @param forward (double) The forward speed in the range -1 (full speed
@@ -235,6 +235,15 @@ public abstract class MecanumBase extends LinearOpMode {
    */
   private double power_accel_decel(double current, double target,
                                    double mtr_min, double accel, double decel) {
+    if (current <= 0.0) {
+      // could happen if there was some robot motion (was hit or coasting)
+      // that confused the sensor/logic.
+      return mtr_min;
+    } else if (current >= target) {
+      // could happen if there was some robot motion (was hit or coasting)
+      // that confused the sensor/logic.
+      return 0.0;
+    }
     double mtr_tmp = 1.0;
     if (current < accel) {
       // in the acceleration zone
@@ -301,7 +310,7 @@ public abstract class MecanumBase extends LinearOpMode {
 
   /**
    * Rotate the robot by the specified number of degrees. Positive is clockwise
-   * and negative is couter clockwise.
+   * and negative is counter-clockwise.
    * @param degrees (double) The number of degrees to be rotated.
    */
   protected void rotate(double degrees) {
@@ -314,7 +323,7 @@ public abstract class MecanumBase extends LinearOpMode {
 
   /**
    * Turn the specified number of degrees. This is a local function that
-   * may have overshoot. Positive is clockwise and negative is couter clockwise.
+   * may have overshoot. Positive is clockwise and negative is counter-clockwise.
    * @param degrees (double) The number of degrees to be rotated.
    */
   protected void turn(double degrees) {
