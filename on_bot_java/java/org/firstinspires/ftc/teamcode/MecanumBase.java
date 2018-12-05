@@ -157,10 +157,13 @@ public abstract class MecanumBase extends LinearOpMode {
    * Set speeds based on the abstraction of robot motion being a combination
    * of forward, sideways, and rotation rotion in the range -1 to 1 where
    * -1 is the fastest the robot can move in the negative direction, 0 is
-   * stopped for that direction andArrakis*
-   * @param forward (double) 
-   * @param sideways (double) 
-   * @param rotation (double) 
+   * stopped for that direction.
+   * @param forward (double) The forward speed in the range -1 (full speed
+   *                backwards) to 1 (full speed forward).
+   * @param sideways (double) The sideways speed in the range -1 (full speed
+   *                 left) to 1 (full speed right).
+   * @param rotation (double) The rotation speed in the range -1 (full speed
+   *                 counter-clockwise) to 1 (full speed clockwise)
    */
   protected void set_speeds(double forward, double sideways, double rotation) {
     double max= Math.abs(forward) + Math.abs(sideways) + Math.abs(rotation);
