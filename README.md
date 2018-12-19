@@ -1,6 +1,8 @@
 # First-FTC
 
 * status: In development, expect frequent changes.
+* version: 0.65 - fixed power_accel_decel error in acceleration ramp; adjusted drive constants and motor directions.
+* version: 0.6 - The full suite is here for mecanum drives. The other referenced drives will be added for release 1.0
 
 These are some FTC robotics code samples for mentoring FTC teams at Hood River Valley High
 School (HRVHS). The majority of our teams are programming in blocks, some in on-bot-java.
@@ -30,7 +32,16 @@ The selection of physical implementation from most simple is:
 One secret to having a robot that performs well in competition is making it easy to drive for the tasks of the
 competition. What is most easy to drive will depend on the physical drive implementation, the programming
 implementation that connects the controller to the physical implementation, and the driver who may be most comfortable
-with move paradigms that mimic familiar games. These are the control modes demonstrated in this code:
+with move paradigms that mimic familiar games.
+ 
+**The control mode paradigm**
+
+Most simple programming examples use *tank* mode where the right and left stick Y is directly mapped to the left and
+right motor speed. This is by far the easiest to program, but it is not an intuitive interface unless you have
+experience with tracked heavy equipment like tanks, bulldozers, etc. The most intuitive for the driver is often
+a mode that most closely mimics the authors favorite games.
+
+These are the control modes demonstrated in this code:
 * **tank**: left stick controlling speed of left tires, right stick controlling speed of right tires. Tank is the
   most simple type to program, but is challenging to control. Simple things like straight forward motion is difficult
   at slow speeds.
@@ -39,11 +50,35 @@ with move paradigms that mimic familiar games. These are the control modes demon
 * **auto** (do be added in the sample programs): where 1 stick controls direction (like the steering wheel
   of a car), and some other control (the other stick, or a trigger), controls speed (like an accelerator pedal).
 
+**Controlling Sensitivity**
+
+Robots need to get somewhere on the playing field quickly. Then they need to do something. I have often seen robots
+getting to *about the right place* in seconds, and then taking 10's of seconds fumbling around because the have
+extended an arm and need to move it left an inch, but any turn moves the arm 6" so a dozen moves are required
+before the arm fortunately stops in the right place.
+
+The problem has 2 primary causes:
+* The control sticks are designed for *twitch game - fast extreme motion is more important than fine control and
+  there is very little control distance between 0 and full speed.
+* Loop speeds - the time between when you make a command and when the robot responds is potentially long and
+  highly variable, which encourages over-control. Specifically, the driver asks for small motion, does not see
+  immediate response, and then asks for more motion, and by the time the robot responds, the motion is way faster
+  than desired
+  
+I have tried different functions like controller position squared or cubed to try to get more sensitivity around 0,
+and have concluded that is the long loop time that causes the majority of fine control problems. The only reasonable
+solution I have found is a *fine control mode* that limits the maximum value from the stick to something that achieves
+fine control, and training drivers to use it when they need fine control - see **right bumper** in the next section.
+
+**Using the Sample Drive Code**
+
 In all of the example programs:
 * **`B` button**: changes the drive mode.
 * **`X` button**: terminates the program. You
   and your team are encouraged to try all of the drive modes and add additional ones for testing before you settle
   on the specific drive mode(s) you will use for your robot.
+* **right bumper**: applies a `bumper_speed` multiplier to the stick values for fine control. You are encouraged to
+  try different bumper speeds to find one that best helps you control the robot when you need fine control.
 * **dpad**: the datapad controls forward-backward (up-down), sideways (right-left), and rotation (right-left with
   the left bumper pressed).
 
@@ -66,7 +101,7 @@ example, if the robot is very front heavy it will tend to rotate clockwise when 
 when moving left. Also, if the wheel mounting is not rigid (wheel axles supported on both ends), this will
 affect movement. The robot will also be easier to displace (move or rotate) if struck by other robots than a robot
 with traction wheels. The physical implementation this code was written for uses these
-[mecnum wheels](https://www.amazon.com/100Mm-Aluminum-Mecanum-Wheel-Right/dp/B01CTUT4GY/ref=sr_1_1)
+[mecanum wheels](https://www.amazon.com/100Mm-Aluminum-Mecanum-Wheel-Right/dp/B01CTUT4GY/ref=sr_1_1)
 driven by [Rev core hex](http://www.revrobotics.com/rev-41-1300/) motors
  
 These are the sample programs for mecanum wheels:
@@ -116,16 +151,5 @@ The traction interface needs to encapsulate the different properties of the driv
 drives that I have encountered always have forward/backward, and turn (or rotation). Note that turn becomes rotation
 if the turning radius is 0. Some drives like omni or mecanum also support sideways motion.
 
-#### Configuration
-
-#### Capability
-
-#### Driver Control
-
-#### Autonomous
-
-### The `TractionRuckus` Implementation
-
-### The `MecanumDriveExample` Demonstration Program
 
 

@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
-@TeleOp(name = "MecanumDriveExampleOrig", group = "")
+@TeleOp(name = "MecanumDriveExampleOrig (Blocks to Java)", group = "")
 public class MecanumDriveExampleOrig extends LinearOpMode {
 
   private DcMotor mtr_rf;
@@ -30,7 +30,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   double scale;
   double tics_per_inch_forward;
   double tics_per_inch_sideways;
-  double mtr_min;
+  double mtr_accel_min;
   double mtr_accel_tics;
   double mtr_decel_tics;
   double mtr_accel_degs;
@@ -43,23 +43,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   double heading_revs;
   float heading_raw_last;
   double start_heading;
-
-  /**
-   * Describe this function...
-   */
-  private void condition_sticks() {
-    left_x = gamepad1.left_stick_x * Math.abs(gamepad1.left_stick_x);
-    left_y = -(gamepad1.left_stick_y * Math.abs(gamepad1.left_stick_y));
-    right_x = gamepad1.right_stick_x * Math.abs(gamepad1.right_stick_x);
-    right_y = -(gamepad1.right_stick_y * Math.abs(gamepad1.right_stick_y));
-    if (gamepad1.right_bumper) {
-      right_x = right_x * bumper_speed;
-      right_y = right_y * bumper_speed;
-      left_x = left_x * bumper_speed;
-      left_y = left_y * bumper_speed;
-    }
-    ave_x = (left_x + right_x) * 0.5;
-  }
+  double mtr_decel_min;
 
   /**
    * This function is executed when this Op Mode is selected from the Driver Station.
@@ -80,19 +64,20 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     // Reset and enable motor encoders. drive_mode = 0 is tank
     drive_mode = 0;
     last_drive_mode = 0;
-    bumper_speed = 0.6;
-    mtr_min = 0.05;
+    bumper_speed = 0.5;
+    mtr_accel_min = 0.3;
+    mtr_decel_min = 0.1;
     mtr_accel_tics = 600;
     mtr_decel_tics = 1200;
     mtr_accel_degs = 20;
-    mtr_decel_degs = 60;
+    mtr_decel_degs = 30;
     calibration_distance = 24;
     tics_per_inch_forward = 84;
     tics_per_inch_sideways = 83;
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
-    mtr_rf.setDirection(DcMotorSimple.Direction.REVERSE);
+    mtr_rf.setDirection(DcMotorSimple.Direction.FORWARD);
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
@@ -100,7 +85,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
-    mtr_lf.setDirection(DcMotorSimple.Direction.FORWARD);
+    mtr_lf.setDirection(DcMotorSimple.Direction.REVERSE);
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
@@ -180,6 +165,23 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   /**
    * Describe this function...
    */
+  private void condition_sticks() {
+    left_x = gamepad1.left_stick_x;
+    left_y = -gamepad1.left_stick_y;
+    right_x = gamepad1.right_stick_x;
+    right_y = -gamepad1.right_stick_y;
+    if (gamepad1.right_bumper) {
+      right_x = right_x * bumper_speed;
+      right_y = right_y * bumper_speed;
+      left_x = left_x * bumper_speed;
+      left_y = left_y * bumper_speed;
+    }
+    ave_x = (left_x + right_x) * 0.5;
+  }
+
+  /**
+   * Describe this function...
+   */
   private void tank_drive() {
     double max_left;
     double max_right;
@@ -207,16 +209,22 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   /**
    * Describe this function...
    */
-  private double power_accel_decel(double current_tics, double target_tics, double mtr_min, double accel_tics, double decel_tics) {
+  private double power_accel_decel(double current_tics, double target_tics, double mtr_accel_min, double accel_tics, double decel_tics) {
     double mtr_tmp;
     double mtr_tmp_2;
 
+    if (current_tics <= 0) {
+      return mtr_accel_min;
+    }
+    if (current_tics >= target_tics) {
+      return 0;
+    }
     mtr_tmp = 1;
     if (current_tics < accel_tics) {
-      mtr_tmp = mtr_min + (1 - mtr_min) * (current_tics + accel_tics);
+      mtr_tmp = mtr_accel_min + (1 - mtr_accel_min) * (current_tics / accel_tics);
     }
     if (current_tics > target_tics - decel_tics) {
-      mtr_tmp_2 = mtr_min + (1 - mtr_min) * ((target_tics - current_tics) / decel_tics);
+      mtr_tmp_2 = mtr_decel_min + (1 - mtr_decel_min) * ((target_tics - current_tics) / decel_tics);
       if (mtr_tmp_2 < mtr_tmp) {
         mtr_tmp = mtr_tmp_2;
       }
@@ -240,7 +248,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
       if (current_tics >= target_tics) {
         break;
       }
-      set_speeds(power_accel_decel(current_tics, target_tics, mtr_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0, 0);
+      set_speeds(power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0, 0);
     }
     set_speeds(0, 0, 0);
   }
@@ -266,9 +274,9 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     mtr_lr.setPower(power_lr);
     angles = imu_0.getAngularOrientation();
     heading_raw = angles.firstAngle;
-    if (heading_raw_last < -140 && heading_raw > 0) {
+    if (heading_raw_last < -150 && heading_raw > 0) {
       heading_revs += -1;
-    } else if (heading_raw_last > 140 && heading_raw < 0) {
+    } else if (heading_raw_last > 150 && heading_raw < 0) {
       heading_revs += 1;
     }
     heading = -(heading_revs * 360 + heading_raw);
@@ -302,7 +310,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
       if (current_tics >= target_tics) {
         break;
       }
-      set_speeds(0, power_accel_decel(current_tics, target_tics, mtr_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0);
+      set_speeds(0, power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0);
     }
     set_speeds(0, 0, 0);
   }
@@ -361,7 +369,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     }
     start_heading = heading;
     while (direction_mult * (heading - start_heading) < degrees * direction_mult) {
-      set_speeds(0, 0, power_accel_decel(direction_mult * (heading - start_heading), degrees * direction_mult, mtr_min, mtr_accel_degs, mtr_accel_degs) * direction_mult);
+      set_speeds(0, 0, power_accel_decel(direction_mult * (heading - start_heading), degrees * direction_mult, mtr_accel_min, mtr_accel_degs, mtr_decel_degs) * direction_mult);
     }
     set_speeds(0, 0, 0);
   }

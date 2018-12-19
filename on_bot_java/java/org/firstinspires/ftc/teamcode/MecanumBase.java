@@ -33,12 +33,13 @@ public abstract class MecanumBase extends LinearOpMode {
   
   // The constants that regulate this program - adjust these to your physical
   // implementation of the drive.
-  double bumper_speed = 0.6;
-  double mtr_min = 0.05;
+  double bumper_speed = 0.5;
+  double mtr_accel_min = 0.3;
+  double mtr_decel_min = 0.1;
   double mtr_accel_tics = 600.0;
   double mtr_decel_tics = 1200.0;
   double mtr_accel_degs = 20.0;
-  double mtr_decel_degs = 60.0;
+  double mtr_decel_degs = 30.0;
   double tics_per_inch_forward = 84.0;
   double tics_per_inch_sideways = 83.0;
   
@@ -57,9 +58,9 @@ public abstract class MecanumBase extends LinearOpMode {
     // You will have to determine which motors to reverse for your robot. All 
     // motors should propell forward when positive power is applied.
     DcMotor.ZeroPowerBehavior at_zero = DcMotor.ZeroPowerBehavior.BRAKE;
-    initialize_motor(mtr_rf, DcMotorSimple.Direction.REVERSE, at_zero);
+    initialize_motor(mtr_rf, DcMotorSimple.Direction.FORWARD, at_zero);
     initialize_motor(mtr_rr, DcMotorSimple.Direction.FORWARD, at_zero);
-    initialize_motor(mtr_lf, DcMotorSimple.Direction.FORWARD, at_zero);
+    initialize_motor(mtr_lf, DcMotorSimple.Direction.REVERSE, at_zero);
     initialize_motor(mtr_lr, DcMotorSimple.Direction.REVERSE, at_zero);
     reset_drive_encoders();
   }
@@ -224,8 +225,10 @@ public abstract class MecanumBase extends LinearOpMode {
    * 
    * @param current (double) The current position in the range 0 to target.
    * @param target (double) The target final position.
-   * @param mtr_min (double) The minimum motor speed - to assure the robot
-   *  gets to the target.
+   * @param mtr_accel_min (double) The minimum acceleration motor speed - to
+   *  assure the robot gets to the target.
+   * @param mtr_decel_min (double) The minimum deceleration motor speed - to
+   *  assure the robot gets to the target.
    * @param accel (double) The acceleration distance with power at current=0
    *  starting at mtr_min and power at current=accel reaching 1.0.
    * @param decel (double) The deceleration distance with power at
@@ -234,11 +237,12 @@ public abstract class MecanumBase extends LinearOpMode {
    *  mtr_min to 1.0
    */
   private double power_accel_decel(double current, double target,
-                                   double mtr_min, double accel, double decel) {
+                                   double mtr_accel_min, double mtr_decel_min,
+                                   double accel, double decel) {
     if (current <= 0.0) {
       // could happen if there was some robot motion (was hit or coasting)
       // that confused the sensor/logic.
-      return mtr_min;
+      return mtr_accel_min;
     } else if (current >= target) {
       // could happen if there was some robot motion (was hit or coasting)
       // that confused the sensor/logic.
@@ -247,12 +251,12 @@ public abstract class MecanumBase extends LinearOpMode {
     double mtr_tmp = 1.0;
     if (current < accel) {
       // in the acceleration zone
-      mtr_tmp = mtr_min + (1.0 - mtr_min) * (current + accel);
+      mtr_tmp = mtr_accel_min + (1.0 - mtr_accel_min) * (current / accel);
     }
     if (current > target - decel) {
       // in the deceleration zone
       double mtr_tmp_2 = mtr_min +
-        (1 - mtr_min) * ((target - current) / decel);
+        (1 - mtr_decel_min) * ((mtr_decel_min - current) / decel);
       if (mtr_tmp_2 < mtr_tmp) {
         // The deceleration is less than the acceleration or the 1.0 max.
         mtr_tmp = mtr_tmp_2;
@@ -278,7 +282,7 @@ public abstract class MecanumBase extends LinearOpMode {
         break;
       }
       set_speeds(direction_mult * power_accel_decel(current_tics, target_tics,
-                                      mtr_min, mtr_accel_tics, mtr_decel_tics),
+                                      mtr__accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
                  0.0, 0.0);
     }
     set_speeds(0.0, 0.0, 0.0);
@@ -302,7 +306,7 @@ public abstract class MecanumBase extends LinearOpMode {
       }
       set_speeds(0.0,
                  direction_mult * power_accel_decel(current_tics, target_tics,
-                                      mtr_min, mtr_accel_tics, mtr_decel_tics),
+                                      mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
                  0.0);
     }
     set_speeds(0.0, 0.0, 0.0);
@@ -336,8 +340,8 @@ public abstract class MecanumBase extends LinearOpMode {
         break;
       }
       set_speeds(0.0, 0.0, 
-                 direction_mult * power_accel_decel(current, target, mtr_min,
-                                      mtr_accel_degs, mtr_decel_degs));
+                 direction_mult * power_accel_decel(current, target, mtr_accel_min,
+                                      mtr_decel_min, mtr_accel_degs, mtr_decel_degs));
     }
     set_speeds(0.0, 0.0, 0.0);
   }
