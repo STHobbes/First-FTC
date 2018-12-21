@@ -255,7 +255,7 @@ public abstract class MecanumBase extends LinearOpMode {
     }
     if (current > target - decel) {
       // in the deceleration zone
-      double mtr_tmp_2 = mtr_min +
+      double mtr_tmp_2 = mtr_decel_min +
         (1 - mtr_decel_min) * ((mtr_decel_min - current) / decel);
       if (mtr_tmp_2 < mtr_tmp) {
         // The deceleration is less than the acceleration or the 1.0 max.
@@ -282,7 +282,7 @@ public abstract class MecanumBase extends LinearOpMode {
         break;
       }
       set_speeds(direction_mult * power_accel_decel(current_tics, target_tics,
-                                      mtr__accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
+                                      mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
                  0.0, 0.0);
     }
     set_speeds(0.0, 0.0, 0.0);
