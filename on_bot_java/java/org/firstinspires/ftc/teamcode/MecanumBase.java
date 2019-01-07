@@ -256,7 +256,7 @@ public abstract class MecanumBase extends LinearOpMode {
     if (current > target - decel) {
       // in the deceleration zone
       double mtr_tmp_2 = mtr_decel_min +
-        (1 - mtr_decel_min) * ((mtr_decel_min - current) / decel);
+        (1 - mtr_decel_min) * ((target - current) / decel);
       if (mtr_tmp_2 < mtr_tmp) {
         // The deceleration is less than the acceleration or the 1.0 max.
         mtr_tmp = mtr_tmp_2;
@@ -298,9 +298,7 @@ public abstract class MecanumBase extends LinearOpMode {
     double direction_mult = (inches > 0.0) ? 1.0 : -1.0;
     double target_tics = tics_per_inch_sideways * inches * direction_mult;
     while (true) {
-      double current_tics = direction_mult *
-        ((mtr_rr.getCurrentPosition() + mtr_lf.getCurrentPosition()) -
-         (mtr_rf.getCurrentPosition() + mtr_lr.getCurrentPosition()));
+      double current_tics = direction_mult *   private double sideways_tics();
       if (current_tics >= target_tics) {
         break;
       }

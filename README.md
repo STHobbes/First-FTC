@@ -1,6 +1,8 @@
 # First-FTC
 
 * status: In development, expect frequent changes.
+* version: 0.7 - additional power_accel_decel fixes, added the android studio versions of this software which
+  makes the traction a component implemented through an **ITraction** interface.
 * version: 0.65 - fixed power_accel_decel error in acceleration ramp; adjusted drive constants and motor directions.
 * version: 0.6 - The full suite is here for mecanum drives. The other referenced drives will be added for release 1.0
 
@@ -77,6 +79,7 @@ In all of the example programs:
 * **`X` button**: terminates the program. You
   and your team are encouraged to try all of the drive modes and add additional ones for testing before you settle
   on the specific drive mode(s) you will use for your robot.
+* **`Y` button**: Move in a square cocked 30 degrees clockwise.
 * **right bumper**: applies a `bumper_speed` multiplier to the stick values for fine control. You are encouraged to
   try different bumper speeds to find one that best helps you control the robot when you need fine control.
 * **dpad**: the datapad controls forward-backward (up-down), sideways (right-left), and rotation (right-left with
@@ -84,7 +87,8 @@ In all of the example programs:
 
 ### Traction
 
-*TODO*
+At Hood River Valley High School we start students with a simple *squarebot*, a roughly 18" square robot with
+4 traction wheels, each motor driven.
 
 ### Traction plus Omni
 
@@ -124,32 +128,20 @@ These are the sample programs for mecanum wheels:
     * **MecanumAuto** - this is the **MecanumDriveExample** runOpMode implemented as an extension of **MecanumBase**
       that runs an autonomous test pattern, and could be easily customized for a specific game topology. NOTE: This
       autonomous pattern takes longer than the 30sec competition limit to run - so turn the timer off if you run this.
-* **ftc_app/java/org/firstinspires/ftc/teamcode/**
-  * *TODO*
-
-## TeamCode Module
-
-Read the FTC app documentation and readme.md for details of adding opcodes, building, etc. This is my code from
-the 2018-2019 Rover Ruckus FTC season. In this year's code I tried to focus on a structure that makes it easy to
-program and test robot components in isolation, and then easily assemble the components into robot calibration,
-autonomous, and driver control.
- 
-I also wanted to use this structured approach for building code samples demonstrating different methods for
-user control of components.
-
-## The Robot Drive Chassis, or Traction
-
-In an ideal world, the traction for the robot would be abstracted so the various calibration, autonomous, and
-driver control programs are independent of changes to the physical implementation of the traction. In this code
-there is an `ITraction` interface that represents the traction operations you want to perform in your programs.
-Implementations of `ITraction` are specific to your physical drive chassis. The `RuckusDrive` class implements
-`ITraction` for my mecanum drive chassis.
-
-### The `ITraction` Interface
-
-The traction interface needs to encapsulate the different properties of the drive or traction mechanism. The
-drives that I have encountered always have forward/backward, and turn (or rotation). Note that turn becomes rotation
-if the turning radius is 0. Some drives like omni or mecanum also support sideways motion.
-
-
+* **ftc_app/java/org/firstinspires/ftc/teamcode/** - focuses on demonstrating how you can make the drive a
+  component that you load at runtime. This is specifically useful when I have multiple robots (both a prototype and
+  a competition robot) and I want to work on and test my competition programming using either robot. The key here is
+  that we define an interface to the drive, and a class implementing that interface for any physical drive (a traction
+  component for that drive). In the competition or test programs we simply load the correct traction component for
+  the robot, and the robot should do the same thing regardless of the base.
+  * **ITraction** - The interface for a traction component. This is simplified from the **on_bot_java** in that there
+    are minimal methods: `initialize()` and `postStartInitialize()` for traction initialization; `supportsSideways()`
+    for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
+    control; and `move()` and `rotate()` and autonomous traction operations.
+    * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
+      implementations of `supportsSideways()`, `move()`, and `forward()` as a method for simple forward-backward
+      motion only tractions.
+      * **MecanumTraction** - The implementation for the mecanum physical traction.
+      * **SquareBotTraction** - The implementation for the HRVHS squarebot - see **Traction** section.
+  * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
 
