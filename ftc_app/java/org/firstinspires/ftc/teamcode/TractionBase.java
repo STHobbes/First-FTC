@@ -1,10 +1,28 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.hardware.DcMotor;
+
 /**
  * This base class implements a common traction functions that do not support sideways motion. This base
  * transforms sideways and move to turn, move, turn sequences.
  */
 public abstract class TractionBase implements ITraction {
+
+    /**
+     * Setup a motor.
+     *
+     * @param motor               (DcMotor) The motor to be setup.
+     * @param direction           (DcMotor.Direction) The motor direction.
+     * @param run_mode            (DcMotor.RunMode) The run mode for the motor.
+     * @param zero_power_behavior (DcMotor.ZeroPowerBehavior) The zero-power behaviour.
+     */
+    protected void lclMotorSetup(DcMotor motor, DcMotor.Direction direction,
+                               DcMotor.RunMode run_mode, DcMotor.ZeroPowerBehavior zero_power_behavior) {
+        motor.setDirection(direction);
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor.setMode(run_mode);
+        motor.setZeroPowerBehavior(zero_power_behavior);
+    }
 
     /**
      * This is a ramp-in and ramp-out generator function that returns a power
@@ -58,6 +76,9 @@ public abstract class TractionBase implements ITraction {
         return false;
     }
 
+    @Override
+    public void resetExpectedHeading() { }
+
    @Override
     public void move(double inches, double degrees, double max_speed) {
         if (0.0 != degrees) { rotate(degrees, max_speed); }
@@ -68,7 +89,8 @@ public abstract class TractionBase implements ITraction {
 
     /**
      * Move forward the specified distance in inches, a negative value is
-     * interpreted as a backwards motion.
+     * interpreted as a backwards motion. This is and rotate() are the minimal
+     * required implementation
      *
      * @param inches    (double) The distance in inches to move forward or backward.
      * @param max_speed (double) The maximum speed in the range 0 to 1

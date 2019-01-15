@@ -5,18 +5,28 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 /**
  * This is a simple test program that exercises different drive controller options that will help you manually test
  * various driver interfaces for your traction, and various autonomous drive operations that will help you calibrate
- * your encoder tics-per-inch, acceleration and deceleration windows, etc. See the notes in README.md for documentation
- * of the control operations.
+ * your encoder tics-per-inch, acceleration and deceleration windows, etc. See the notes in README.md for
+ * documentation of the control operations.
  */
 @TeleOp(name = "TractionTest", group = "")
-public class TractionTest  extends LinearOpMode {
+public class TractionTest extends LinearOpMode {
     private int drive_mode = 0;
     private int last_drive_mode = drive_mode;
-    private String[] drive_mode_name = {"tank", "airplane right", "airplane left"};
+    private String[] drive_mode_name = {"tank", "airplane right", "airplane left",
+            "auto right", "auto left"};
     // Load the implementation of the program for your physical implementation of the traction here.
-    private ITraction traction = new MecanumTraction();
+//    private ITraction traction = new MecanumTraction();         // Mecanum, no PID heading correction
+    private ITraction traction = new MecanumPidTraction();      // Mecanum, with PID heading correction
+//    private ITraction traction = new SquareBotTraction();       // SquareBot, no PID heading correction
+//    private ITraction traction = new SquareBotPidTraction();    // SquareBot, no PID heading correction
+
     private double bumper_speed = 0.6;
-    private double calibration_distance = 24.0;
+    // The calibration distance, which is the distance the robot will move
+    // for dpad forward, backward, right, and left.
+    double calibration_distance = 24.0;
+    // A turning rate when in automotive drive mode to limit the turn rate a full
+    // forward or backward speed.
+    double auto_turn_rate = 0.25;
     // gamepad state
     private double left_x = 0.0;
     private double left_y = 0.0;
@@ -30,7 +40,7 @@ public class TractionTest  extends LinearOpMode {
     @Override
     public void runOpMode() {
         // initialize the mecanum traction base.
-        traction.initialize(hardwareMap);
+        traction.initialize(this);
         this.waitForStart();
         traction.postStartInitialize();
         while (this.opModeIsActive()) {
@@ -40,10 +50,10 @@ public class TractionTest  extends LinearOpMode {
             } else if (gamepad1.b) {
                 // Test for switch between tank and aircraft
                 if (drive_mode == last_drive_mode) {
-                    drive_mode = (drive_mode + 1) % 3;
+                    drive_mode = (drive_mode + 1) % drive_mode_name.length;
                 }
             } else if (gamepad1.y) {
-                // A little test of move motion
+                // move in a 30 square rotated 30 degrees
                 traction.move(12.0,30.0,1.0);
                 traction.move(-12.0,-60.0,1.0);
                 traction.move(-12.0,30.0,1.0);
@@ -86,10 +96,20 @@ public class TractionTest  extends LinearOpMode {
                     // right stick is forward/back and side-to-side with no rotation,
                     // left X is rotation.
                     traction.setSpeeds(right_y, right_x, left_x);
-                } else {
+                } else if (drive_mode == 2) {
                     // left stick is forward/back and side-to-side with no rotation,
                     // right X is rotation.
                     traction.setSpeeds(left_y, left_x, right_x);
+                } else if (drive_mode == 3) {
+                    // right stick is forward/back and right/left rotation with no
+                    // sideways motion, left X is sideways motion.
+                    traction.setSpeeds(right_y, left_x,
+                            right_x + ((right_x * Math.abs(right_y)) * (auto_turn_rate - 1.0)));
+                } else {
+                    // left stick is forward/back and right/left rotation with no
+                    // sideways motion, right X is sideways motion.
+                    traction.setSpeeds(left_y, right_x,
+                            left_x + ((left_x * Math.abs(left_y)) * (auto_turn_rate - 1.0)));
                 }
             }
             telemetry.update();

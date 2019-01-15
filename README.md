@@ -1,10 +1,9 @@
 # First-FTC
 
-* status: In development, expect frequent changes.
-* version: 0.7 - additional power_accel_decel fixes, added the android studio versions of this software which
-  makes the traction a component implemented through an **ITraction** interface.
-* version: 0.65 - fixed power_accel_decel error in acceleration ramp; adjusted drive constants and motor directions.
-* version: 0.6 - The full suite is here for mecanum drives. The other referenced drives will be added for release 1.0
+* status: Release
+* version: 0.90 - All the basic programming principles for drive are here.
+* TODO: The final versions are all in the android programming directory (ftc-app). Not all of these have been
+  back-ported to blocks and on-bot-java (I will get to that).
 
 These are some FTC robotics code samples for mentoring FTC teams at Hood River Valley High
 School (HRVHS). The majority of our teams are programming in blocks, some in on-bot-java.
@@ -13,13 +12,17 @@ for completeness and to make comparison easy.
 
 ## Drive or Traction Implementation
 
-At HRVHS we generally start with the construction of a robot base that can be driven around
-before we start customizing for the specific competition. The base requires a physical
-implementation, a software controller implementation, and software implementation of move
-functions that can be used to build the autonomous program.
+At HRVHS we generally start with the construction of a robot base (a simple *squarebot* - 4 traction
+tire; 12" to 18" square base) that can be programmed and driven around
+before we start customizing for the specific competition. We call the drive base the **traction** for the
+robot. The **traction** requires a physical implementation (frame,
+motors, wheels), a software controller configuration (connection of the REV controller to the motors, IMU, and
+other sensors), and software implementation of move functions that can be used to build the autonomous
+program. This project is all about the software implementation of driver control and move functions.
 
 The selection of physical implementation from most simple is:
-* **traction** tires: 4 tires with a fixed tread. Left side and right side may each be driven by a single motor or
+* **traction tires**: 4 traction tires with a fixed tread. Left side and right side may each be driven
+  by a single motor or
   there may be one motor per wheel. Motion supported by this implementation is forward-backward and rotation. The
   center for rotation is the centroid of the drive wheels.
 * **traction plus omni**: 2 traction tires, 2 omni tires. The omni tires may be either front or back. Omni tires reduce
@@ -47,35 +50,37 @@ These are the control modes demonstrated in this code:
 * **tank**: left stick controlling speed of left tires, right stick controlling speed of right tires. Tank is the
   most simple type to program, but is challenging to control. Simple things like straight forward motion is difficult
   at slow speeds.
-* **airplane** where multiple move directions, i.e. forward-backward and
+* **airplane right/left** where multiple move directions, i.e. forward-backward and
   either sideways or rotate are on the same stick.
-* **auto** (do be added in the sample programs): where 1 stick controls direction (like the steering wheel
-  of a car), and some other control (the other stick, or a trigger), controls speed (like an accelerator pedal).
+* **auto right/left**: where 1 stick-x controls direction (like the steering wheel
+  of a car), and some other control (the stick-y, or a trigger), controls speed (like an accelerator pedal).
 
 **Controlling Sensitivity**
 
 Robots need to get somewhere on the playing field quickly. Then they need to do something. I have often seen robots
-getting to *about the right place* in seconds, and then taking 10's of seconds fumbling around because the have
+getting to *about the right place* in seconds, and then taking 10's of seconds fumbling around because they have
 extended an arm and need to move it left an inch, but any turn moves the arm 6" so a dozen moves are required
 before the arm fortunately stops in the right place.
 
 The problem has 2 primary causes:
-* The control sticks are designed for *twitch game - fast extreme motion is more important than fine control and
+* The control sticks are designed for *twitch* game - fast extreme motion is more important than fine control and
   there is very little control distance between 0 and full speed.
 * Loop speeds - the time between when you make a command and when the robot responds is potentially long and
-  highly variable, which encourages over-control. Specifically, the driver asks for small motion, does not see
-  immediate response, and then asks for more motion, and by the time the robot responds, the motion is way faster
-  than desired
+  highly variable (i.e. the drive program is a loop and there is a lag between when the driver takes an action
+  and the program/robot responds to the action because of loop time), which encourages over-control. Specifically,
+  the driver asks for small motion, does not see immediate response, and then asks for more motion, and by the
+  time the robot responds, the motion is way faster and more extreme than desired.
   
 I have tried different functions like controller position squared or cubed to try to get more sensitivity around 0,
-and have concluded that is the long loop time that causes the majority of fine control problems. The only reasonable
+and have concluded that it is the long loop time that causes the majority of fine control problems. The only reasonable
 solution I have found is a *fine control mode* that limits the maximum value from the stick to something that achieves
 fine control, and training drivers to use it when they need fine control - see **right bumper** in the next section.
 
 **Using the Sample Drive Code**
 
-In all of the example programs:
-* **`B` button**: changes the drive mode.
+In all of the example programs teher is a test drive/autonomous program with these controls:
+* **`B` button**: changes the drive mode. The modes are **tank**, **airplane right**, **airplane left**,
+    **auto right**, and **auto lef**. See earlier notes for details.
 * **`X` button**: terminates the program. You
   and your team are encouraged to try all of the drive modes and add additional ones for testing before you settle
   on the specific drive mode(s) you will use for your robot.
@@ -85,10 +90,31 @@ In all of the example programs:
 * **dpad**: the datapad controls forward-backward (up-down), sideways (right-left), and rotation (right-left with
   the left bumper pressed).
 
-### Traction
+### Traction Only ###
+Theses are programming notes for the simple *SquareBot* described earlier. For this exercise I built a small
+*SquareBot* using REV motors and traction wheels.
 
-At Hood River Valley High School we start students with a simple *squarebot*, a roughly 18" square robot with
-4 traction wheels, each motor driven.
+These are the sample programs for the traction wheel **SquareBot**:
+* **blocks** - The blocks example is not yet back-ported.
+* **on_bot_java** - The OnBotJava example is not yet back-ported.
+* **ftc_app/java/org/firstinspires/ftc/teamcode/** - focuses on demonstrating how you can make the drive a
+  component that you load at runtime. This is specifically useful when I have multiple robots (both a prototype and
+  a competition robot) and I want to work on and test my competition programming using either robot. The key here is
+  that we define an interface to the drive, and a class implementing that interface for any physical drive (a traction
+  component for that drive). In the competition or test programs we simply load the correct traction component for
+  the robot, and the robot should do the same thing regardless of the base.
+  * **ITraction** - The interface for a traction component. This is simplified from the **on_bot_java** in that there
+    are minimal methods: `initialize()` and `postStartInitialize()` for traction initialization; `supportsSideways()`
+    for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
+    control; and `move()` and `rotate()` and autonomous traction operations.
+    * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
+      implementations of `supportsSideways()` and `move()`for a simple traction that supports forward-backward
+      motion and not sideways.
+      * **SquareBotTraction** - The implementation for the HRVHS squarebot  using encoders and motor speed- see **Traction** section.
+      * **SquareBotPidTraction** - The implementation for the HRVHS squarebot - see **Traction** section.
+  * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
+  * **TractionAuto** - An autonomous test program that runs any **ITraction** implementation through an
+    autonomous move sequence.
 
 ### Traction plus Omni
 
@@ -139,9 +165,12 @@ These are the sample programs for mecanum wheels:
     for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
     control; and `move()` and `rotate()` and autonomous traction operations.
     * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
-      implementations of `supportsSideways()`, `move()`, and `forward()` as a method for simple forward-backward
-      motion only tractions.
-      * **MecanumTraction** - The implementation for the mecanum physical traction.
-      * **SquareBotTraction** - The implementation for the HRVHS squarebot - see **Traction** section.
+      implementations of `supportsSideways()` and `move()`for a simple traction that supports forward-backward
+      motion and not sideways.
+      * **MecanumTraction** - The implementation for the mecanum physical traction using encoders and motor speed.
+      * **MecanumPidTraction** - The implementation for the mecanum physical traction using encoders, motor speed,
+        and a PID loop to adjust heading.
   * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
+  * **TractionAuto** - An autonomous test program that runs any **ITraction** implementation through an
+    autonomous move sequence.
 

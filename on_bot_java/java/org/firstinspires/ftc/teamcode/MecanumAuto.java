@@ -22,27 +22,21 @@ public class MecanumAuto extends MecanumBase {
     
     // run an autonomous pattern
     // Run in a 3' square
-    forward(36.0);
-    sideways(36.0);
-    forward(-36.0);
-    sideways(-36.0);
-    Thread.sleep(2000);
+    move(36.0, 0.0, 1.0);
+    move(36.0, 90.0, 1.0);
+    move(-36.0, 0.0, 1.0);
+    move(36.0, -90.0, 1.0);
+    Thread.sleep(1000);
 
-    // run in a 3' X
-    rotate(45.0);
-    forward(50.9);
-    rotate(45.0);
-    forward(-36.0);
-    rotate(45.0);
-    forward(50.9);
-    rotate(-45.0);
-    forward(-36.0);
-    rotate(-90.0);
-    Thread.sleep(2000);
+    // run in a 3' X within the above square
+    move(50.91, 45.0, 1.0);
+    move(-36.0, 0.0, 1.0);
+    move(50.91, -45.0, 1.0);
+    move(-36.0, 0.0, 1.0);
+    Thread.sleep(1000);
 
     // spin (demonstrates crossing the -180 to/from 189 boundary
     rotate(360.0);
     rotate(-360.0);
-    
   }
 }

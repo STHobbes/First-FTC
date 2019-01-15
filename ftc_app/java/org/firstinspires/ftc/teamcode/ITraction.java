@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 /**
  * The interface for a traction object, which represents the traction (horizontal motion) base
@@ -16,11 +16,11 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public interface ITraction {
     /**
      * Initialize the traction implementation, which normally means find the traction motors in the
-     * <tt>hardware_map</tt> and initialize them for use. Setup IMUs, etc.
+     * <tt>linearOpMode</tt> and initialize them for use. Setup IMUs, etc.
      *
-     * @param hardware_map (HardwareMap, readonly) The hardware map for the robot.
+     * @param linearOpMode (LinearOpMode, readonly) The liner operation mode this traction is being used in.
      */
-    void initialize(HardwareMap hardware_map);
+    void initialize(LinearOpMode linearOpMode);
 
     /**
      * The post-start initialization. This is here for things like IMU calibration which should be delayed until
@@ -35,6 +35,14 @@ public interface ITraction {
      * @return <tt>true</tt> if sideways motion is supported, <tt>false</tt> otherwise.
      */
     boolean supportsSideways();
+
+    /**
+     * The expected heading is accumulated from rotate and move commands. The expected heading allows
+     * for continuous corrections of heading drift during move and rotate operations. Driver controlled
+     * movement introduces changes to the expected heading. Use this method to reset the expected
+     * heading to the current heading.
+     */
+    void resetExpectedHeading();
 
     /**
      * Set speeds based on the abstraction of robot motion being a combination

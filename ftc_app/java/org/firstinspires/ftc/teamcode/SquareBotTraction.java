@@ -1,54 +1,40 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.bosch.BNO055IMU;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 
 public class SquareBotTraction extends TractionBase {
 
+    protected LinearOpMode linearOpMode;
+
     // This is the physical hardware - motors and sensors - that provide the physical implementation of the traction.
-    private BNO055IMU imu_0;    // primary IMU
-    private DcMotor motor_rf;   // right front motor
-    private DcMotor motor_rr;   // right rear motor
-    private DcMotor motor_lf;   // left front motor
-    private DcMotor motor_lr;   // left rear motor
+    protected BNO055IMU imu_0;    // primary IMU
+    protected DcMotor motor_rf;   // right front motor
+    protected DcMotor motor_rr;   // right rear motor
+    protected DcMotor motor_lf;   // left front motor
+    protected DcMotor motor_lr;   // left rear motor
 
     // The constants that regulate this program - adjust these to your physical
     // implementation of the drive.
-    private static double mtr_accel_min = 0.1;
-    private static double mtr_decel_min = 0.05;
-    private static double mtr_accel_tics = 3000.0;
-    private static double mtr_decel_tics = 6000.0;
-    private static double mtr_accel_degs = 30.0;
-    private static double mtr_decel_degs = 60.0;
-    private static double tics_per_inch_forward = 504.0;
+    protected static double mtr_accel_min = 0.1;
+    protected static double mtr_decel_min = 0.05;
+    protected static double mtr_accel_tics = 3000.0;
+    protected static double mtr_decel_tics = 6000.0;
+    protected static double mtr_accel_degs = 30.0;
+    protected static double mtr_decel_degs = 60.0;
+    protected static double tics_per_inch_forward = 504.0;
 
     // tracking the heading of the robot
-    double heading;
-    int heading_revs = 0;
-    double heading_raw_last;
-    double start_heading;
+    double heading;             // the current heading of the robot
+    int heading_revs = 0;       // the complete revolutions of the robot
+    double heading_raw_last;    // the last raw heading from the IMU
 
     // =================================================================================================================
     // Local support functions
     // =================================================================================================================
-
-    /**
-     * Setup a motor.
-     *
-     * @param motor               (DcMotor) The motor to be setup.
-     * @param direction           (DcMotor.Direction) The motor direction.
-     * @param run_mode            (DcMotor.RunMode) The run mode for the motor.
-     * @param zero_power_behavior (DcMotor.ZeroPowerBehavior) The zero-power behaviour.
-     */
-    private void lclMotorSetup(DcMotor motor, DcMotor.Direction direction,
-                               DcMotor.RunMode run_mode, DcMotor.ZeroPowerBehavior zero_power_behavior) {
-        motor.setDirection(direction);
-        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        motor.setMode(run_mode);
-        motor.setZeroPowerBehavior(zero_power_behavior);
-    }
 
     /**
      * Reset the drive encoders to 0 and set all motors to RUN_USING_ENCODER,
@@ -56,7 +42,7 @@ public class SquareBotTraction extends TractionBase {
      * and the motor control libraries use the encoders and PID loops to keep
      * the motors coordinated.
      */
-    private void reset_drive_encoders() {
+    protected void reset_drive_encoders() {
         motor_rf.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_rr.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor_lf.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -76,7 +62,7 @@ public class SquareBotTraction extends TractionBase {
      * @param power_lf (double) The power (speed) for the left-front motor.
      * @param power_lr (double) The power (speed) for the left-rear motor.
      */
-    private void lclSetPower(double power_rf, double power_rr, double power_lf, double power_lr) {
+    protected void lclSetPower(double power_rf, double power_rr, double power_lf, double power_lr) {
         motor_rf.setPower(power_rf);
         motor_rr.setPower(power_rr);
         motor_lf.setPower(power_lf);
@@ -100,16 +86,19 @@ public class SquareBotTraction extends TractionBase {
         // rotation for the power, so we will sign correct heading to match.
         heading = -(heading_revs * 360.0 + heading_raw);
         heading_raw_last = heading_raw;
-//        telemetry.addData("revs", heading_revs);
-//        telemetry.addData("heading", heading);
+        linearOpMode.telemetry.addData("heading", heading);
+        linearOpMode.telemetry.update();
 
     }
 
     // =================================================================================================================
-    //
+    // ITraction implementation
     // =================================================================================================================
     @Override
-    public void initialize(HardwareMap hardware_map) {
+    public void initialize(LinearOpMode linearOpMode) {
+        this.linearOpMode = linearOpMode;
+        HardwareMap hardware_map = linearOpMode.hardwareMap;
+
         // find the primary IMU
         imu_0 = hardware_map.get(BNO055IMU.class, "imu_0");
 
@@ -198,6 +187,7 @@ public class SquareBotTraction extends TractionBase {
                 motor_rr.getCurrentPosition() + motor_lr.getCurrentPosition());
     }
 
+    @Override
     protected void forward(double inches, double max_speed)
     {
         reset_drive_encoders();

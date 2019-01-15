@@ -34,17 +34,18 @@ public abstract class MecanumBase extends LinearOpMode {
   // The constants that regulate this program - adjust these to your physical
   // implementation of the drive.
   double bumper_speed = 0.5;
-  double mtr_accel_min = 0.3;
+  double mtr_accel_min = 0.4;
   double mtr_decel_min = 0.1;
-  double mtr_accel_tics = 600.0;
+  double mtr_accel_tics = 400.0;
   double mtr_decel_tics = 1200.0;
-  double mtr_accel_degs = 20.0;
-  double mtr_decel_degs = 30.0;
+  double mtr_accel_degs = 10.0;
+  double mtr_decel_degs = 60.0;
   double tics_per_inch_forward = 84.0;
   double tics_per_inch_sideways = 83.0;
   
   // tracking the heading of the robot
   double heading;
+  double expected_heading;
   int heading_revs = 0;
   double heading_raw_last;
   double start_heading;
@@ -58,9 +59,9 @@ public abstract class MecanumBase extends LinearOpMode {
     // You will have to determine which motors to reverse for your robot. All 
     // motors should propell forward when positive power is applied.
     DcMotor.ZeroPowerBehavior at_zero = DcMotor.ZeroPowerBehavior.BRAKE;
-    initialize_motor(mtr_rf, DcMotorSimple.Direction.FORWARD, at_zero);
+    initialize_motor(mtr_rf, DcMotorSimple.Direction.REVERSE, at_zero);
     initialize_motor(mtr_rr, DcMotorSimple.Direction.FORWARD, at_zero);
-    initialize_motor(mtr_lf, DcMotorSimple.Direction.REVERSE, at_zero);
+    initialize_motor(mtr_lf, DcMotorSimple.Direction.FORWARD, at_zero);
     initialize_motor(mtr_lr, DcMotorSimple.Direction.REVERSE, at_zero);
     reset_drive_encoders();
   }
@@ -264,48 +265,57 @@ public abstract class MecanumBase extends LinearOpMode {
     }
     return mtr_tmp;
   }
-  
-  /**
-   * Move forward the specified distance in inches, a negative value is 
-   * interpreted as a backwards motion.
-   * @param inches (double) The distance in inches to move forward or backward.
-   */
-  protected void forward(double inches) {
-    reset_drive_encoders();
-    double direction_mult = (inches > 0.0) ? 1.0 : -1.0;
-    double target_tics = tics_per_inch_forward * inches * direction_mult;
-    while (true) {
-      double current_tics = direction_mult *
-        (mtr_rf.getCurrentPosition() + mtr_lf.getCurrentPosition() +
-         mtr_rr.getCurrentPosition() + mtr_lr.getCurrentPosition());
-      if (current_tics >= target_tics) {
-        break;
-      }
-      set_speeds(direction_mult * power_accel_decel(current_tics, target_tics,
-                                      mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
-                 0.0, 0.0);
-    }
-    set_speeds(0.0, 0.0, 0.0);
+
+  private double forward_tics() {
+      return (mtr_rf.getCurrentPosition() + mtr_lf.getCurrentPosition() +
+              mtr_rr.getCurrentPosition() + mtr_lr.getCurrentPosition());
   }
 
-  /**
-   * Move sideways the specified distance in inches, a positive value moves the
-   * robot to the right, and a negative value moves the robot to the left.
-   * @param inches (double) The distance in inches to move right or left.
-   */
-  protected void sideways(double inches) {
+  private double sideways_tics() {
+      return ((mtr_rr.getCurrentPosition() + mtr_lf.getCurrentPosition()) -
+              (mtr_rf.getCurrentPosition() + mtr_lr.getCurrentPosition()));
+  }
+
+  public void move(double inches, double degrees, double max_speed) {
     reset_drive_encoders();
-    double direction_mult = (inches > 0.0) ? 1.0 : -1.0;
-    double target_tics = tics_per_inch_sideways * inches * direction_mult;
-    while (true) {
-      double current_tics = direction_mult *   private double sideways_tics();
-      if (current_tics >= target_tics) {
-        break;
+    // We are going to use the cos and sin of the angle as the forward and
+    // sideways speed respectively
+    double radians = Math.toRadians(degrees);
+    double forward_max_speed = Math.abs(Math.cos(radians) * max_speed);
+    double forward_inches = Math.cos(radians) * inches;
+    double forward_direction_mult = (forward_inches > 0.0) ? 1.0 : -1.0;
+    double sideways_max_speed = Math.abs(Math.sin(radians) * max_speed);
+    double sideways_inches = Math.sin(radians) * inches;
+    double sideways_direction_mult = (sideways_inches > 0.0) ? 1.0 : -1.0;
+    if (forward_max_speed > sideways_max_speed) {
+      double forward_target_tics = tics_per_inch_forward * forward_inches *
+        forward_direction_mult;
+      while (true) {
+        double current_forward_tics = forward_direction_mult * forward_tics();
+        if (current_forward_tics >= forward_target_tics) {
+          break;
+        }
+        double speed_mult = power_accel_decel(current_forward_tics,
+            forward_target_tics, mtr_accel_min, mtr_decel_min,
+            mtr_accel_tics, mtr_decel_tics);
+        set_speeds(forward_max_speed * speed_mult * forward_direction_mult,
+            sideways_max_speed * speed_mult * sideways_direction_mult,
+            0.0);
       }
-      set_speeds(0.0,
-                 direction_mult * power_accel_decel(current_tics, target_tics,
-                                      mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics),
-                 0.0);
+    } else {
+      double sideways_target_tics = tics_per_inch_sideways * sideways_inches *
+        sideways_direction_mult;
+      while (true) {
+        double current_sideways_tics = sideways_direction_mult * sideways_tics();
+        if (current_sideways_tics >= sideways_target_tics) {
+          break;
+        }
+        double speed_mult = power_accel_decel(current_sideways_tics, sideways_target_tics,
+                mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics);
+        set_speeds(forward_max_speed * speed_mult * forward_direction_mult,
+                  sideways_max_speed * speed_mult * sideways_direction_mult,
+                  0.0);
+      }
     }
     set_speeds(0.0, 0.0, 0.0);
   }
@@ -329,6 +339,10 @@ public abstract class MecanumBase extends LinearOpMode {
    * @param degrees (double) The number of degrees to be rotated.
    */
   protected void turn(double degrees) {
+    // reset encoders so we don't have any residual PID stuff for speeds before
+    // this rotation.
+    reset_drive_encoders();
+    // Do the rotate using the IMU for heading.
     double direction_mult = (degrees > 0.0) ? 1.0 : -1.0;
     double start_heading = heading;
     double target = degrees * direction_mult;
@@ -338,8 +352,9 @@ public abstract class MecanumBase extends LinearOpMode {
         break;
       }
       set_speeds(0.0, 0.0, 
-                 direction_mult * power_accel_decel(current, target, mtr_accel_min,
-                                      mtr_decel_min, mtr_accel_degs, mtr_decel_degs));
+                 direction_mult * power_accel_decel(current, target,
+                      mtr_accel_min,mtr_decel_min,
+                      mtr_accel_degs, mtr_decel_degs));
     }
     set_speeds(0.0, 0.0, 0.0);
   }
