@@ -17,7 +17,8 @@ tire; 12" to 18" square base) that can be programmed and driven around
 before we start customizing for the specific competition. We call the drive base the **traction** for the
 robot. The **traction** requires a physical implementation (frame,
 motors, wheels), a software controller configuration (connection of the REV controller to the motors, IMU, and
-other sensors), and software implementation of move functions that can be used to build the autonomous
+other sensors), and software implementation of move functions that can
+be used to drive the robot and build the autonomous
 program. This project is all about the software implementation of driver control and move functions.
 
 The selection of physical implementation from most simple is:
@@ -35,16 +36,18 @@ The selection of physical implementation from most simple is:
 * **other**: *TODO: elaborate*
 
 One secret to having a robot that performs well in competition is making it easy to drive for the tasks of the
-competition. What is most easy to drive will depend on the physical drive implementation, the programming
-implementation that connects the controller to the physical implementation, and the driver who may be most comfortable
-with move paradigms that mimic familiar games.
- 
-**The control mode paradigm**
+competition, and easy to reliably program the autonomous operation of the robot.
 
-Most simple programming examples use *tank* mode where the right and left stick Y is directly mapped to the left and
-right motor speed. This is by far the easiest to program, but it is not an intuitive interface unless you have
+## General Programming Notes
+
+### Organization
+ 
+### The control mode paradigm
+
+Most simple programming examples use *tank* mode where the right and left stick Y are directly mapped to the left and
+right motor speeds. This is by far the easiest to program, but it is not an intuitive interface unless you have
 experience with tracked heavy equipment like tanks, bulldozers, etc. The most intuitive for the driver is often
-a mode that most closely mimics the authors favorite games.
+a mode that most closely mimics the driver's favorite games or vehicles.
 
 These are the control modes demonstrated in this code:
 * **tank**: left stick controlling speed of left tires, right stick controlling speed of right tires. Tank is the
@@ -54,8 +57,24 @@ These are the control modes demonstrated in this code:
   either sideways or rotate are on the same stick.
 * **auto right/left**: where 1 stick-x controls direction (like the steering wheel
   of a car), and some other control (the stick-y, or a trigger), controls speed (like an accelerator pedal).
+  
+### Using the Sample Drive Program
 
-**Controlling Sensitivity**
+In all of the example programs there is a test drive program with these controls:
+* **`B` button**: changes the drive mode. The modes are **tank**, **airplane right**, **airplane left**,
+    **auto right**, and **auto lef**. See earlier notes for details.
+* **`X` button**: terminates the program. You
+  and your team are encouraged to try all of the drive modes and add additional ones for testing before you settle
+  on the specific drive mode(s) you will use for your robot.
+* **`Y` button**: The robot moves in a square cocked 30 degrees clockwise.
+* **right bumper**: applies a `bumper_speed` multiplier to the stick values for fine control. You are encouraged to
+  try different bumper speeds to find one that best helps you control the robot when you need fine control.
+* **dpad**: the datapad runs autonomous move operations:
+  * up-down: the robot moves forward-backward the `calibration_distance`;
+  * right-left: the robot moves sideways (right or left) the `calibration_distance`;
+  * right-left with the left bumper pressed: the robot rotates 90&deg; clockwise or counter-clockwise.
+
+### Controlling Sensitivity
 
 Robots need to get somewhere on the playing field quickly. Then they need to do something. I have often seen robots
 getting to *about the right place* in seconds, and then taking 10's of seconds fumbling around because they have
@@ -76,21 +95,7 @@ and have concluded that it is the long loop time that causes the majority of fin
 solution I have found is a *fine control mode* that limits the maximum value from the stick to something that achieves
 fine control, and training drivers to use it when they need fine control - see **right bumper** in the next section.
 
-**Using the Sample Drive Code**
-
-In all of the example programs teher is a test drive/autonomous program with these controls:
-* **`B` button**: changes the drive mode. The modes are **tank**, **airplane right**, **airplane left**,
-    **auto right**, and **auto lef**. See earlier notes for details.
-* **`X` button**: terminates the program. You
-  and your team are encouraged to try all of the drive modes and add additional ones for testing before you settle
-  on the specific drive mode(s) you will use for your robot.
-* **`Y` button**: Move in a square cocked 30 degrees clockwise.
-* **right bumper**: applies a `bumper_speed` multiplier to the stick values for fine control. You are encouraged to
-  try different bumper speeds to find one that best helps you control the robot when you need fine control.
-* **dpad**: the datapad controls forward-backward (up-down), sideways (right-left), and rotation (right-left with
-  the left bumper pressed).
-
-### Traction Only ###
+## Traction Wheels Only
 Theses are programming notes for the simple *SquareBot* described earlier. For this exercise I built a small
 *SquareBot* using REV motors and traction wheels.
 
@@ -110,21 +115,21 @@ These are the sample programs for the traction wheel **SquareBot**:
     * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
       implementations of `supportsSideways()` and `move()`for a simple traction that supports forward-backward
       motion and not sideways.
-      * **SquareBotTraction** - The implementation for the HRVHS squarebot  using encoders and motor speed- see **Traction** section.
-      * **SquareBotPidTraction** - The implementation for the HRVHS squarebot - see **Traction** section.
+      * **SquareBotTraction** - The implementation for the HRVHS **SquareBot** using encoders.
+      * **SquareBotPidTraction** - The implementation for the HRVHS **SquareBot** .
   * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
   * **TractionAuto** - An autonomous test program that runs any **ITraction** implementation through an
     autonomous move sequence.
 
-### Traction plus Omni
+## Traction plus Omni Wheels
 
 *TODO*
 
-### Omni Only
+## Omni Wheels Only
 
 *TODO*
 
-### Mecanum 
+## Mecanum Wheels
 
 With mecanum wheels we have found that the motion of the robot changes when the balance of the robot changes. For
 example, if the robot is very front heavy it will tend to rotate clockwise when moving right and counterclockwise
