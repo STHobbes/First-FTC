@@ -37,6 +37,15 @@ public interface ITraction {
     boolean supportsSideways();
 
     /**
+     * The maximum turn rate that should be allowed during an automotive drive when the traction is moving
+     * at full speed either forward and backward. This limits turn at maximum rate so the robot will not
+     * capsize (roll) when full turn is applied at full speed.
+     * @return (double) the maximum rotation in the range 0 to 1 that should be applied when the robot is
+     *  at full speed forward or backward.
+     */
+    double getAutoTurnRate();
+
+    /**
      * The expected heading is accumulated from rotate and move commands. The expected heading allows
      * for continuous corrections of heading drift during move and rotate operations. Driver controlled
      * movement introduces changes to the expected heading. Use this method to reset the expected
@@ -86,10 +95,10 @@ public interface ITraction {
      * @param inches    (double) The distance in inches to move along the specified
      *                  direction. This may be a negative distance. NOTE that moving
      *                  in a negative distance is the same as changing the direction
-     *                  180 degrees and moving in a positive direction.
-     * @param degrees   (double) The direction the robot should move: 0.0 is straight
-     *                  ahead; 90.0 is sideways to the right; -90.0 is sideways to the
-     *                  left; 180 (-180) is backwards; e.g. 45.0 would be diagonally
+     *                  180&deg; and moving in a positive direction.
+     * @param degrees   (double) The direction the robot should move: 0.0&deg; is straight
+     *                  ahead; 90.0&deg; is sideways to the right; -90.0&deg; is sideways to the
+     *                  left; 180&deg; (-180&deg;) is backwards; e.g. 45.0&deg; would be diagonally
      *                  forward and to the right.
      * @param max_speed (double) The maximum speed in the range 0 to 1
      */

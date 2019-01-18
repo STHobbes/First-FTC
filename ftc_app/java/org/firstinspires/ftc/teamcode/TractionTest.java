@@ -24,9 +24,6 @@ public class TractionTest extends LinearOpMode {
     // The calibration distance, which is the distance the robot will move
     // for dpad forward, backward, right, and left.
     double calibration_distance = 24.0;
-    // A turning rate when in automotive drive mode to limit the turn rate a full
-    // forward or backward speed.
-    double auto_turn_rate = 0.25;
     // gamepad state
     private double left_x = 0.0;
     private double left_y = 0.0;
@@ -104,12 +101,12 @@ public class TractionTest extends LinearOpMode {
                     // right stick is forward/back and right/left rotation with no
                     // sideways motion, left X is sideways motion.
                     traction.setSpeeds(right_y, left_x,
-                            right_x + ((right_x * Math.abs(right_y)) * (auto_turn_rate - 1.0)));
+                            right_x + ((right_x * Math.abs(right_y)) * (traction.getAutoTurnRate() - 1.0)));
                 } else {
                     // left stick is forward/back and right/left rotation with no
                     // sideways motion, right X is sideways motion.
                     traction.setSpeeds(left_y, right_x,
-                            left_x + ((left_x * Math.abs(left_y)) * (auto_turn_rate - 1.0)));
+                            left_x + ((left_x * Math.abs(left_y)) * (traction.getAutoTurnRate() - 1.0)));
                 }
             }
             telemetry.update();

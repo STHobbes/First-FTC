@@ -23,21 +23,24 @@ public class MecanumTraction extends TractionBase {
     protected DcMotor motor_lr;   // left rear motor
     // After calibration this term represents the bias of the mecanum drive as a result of alignment, friction, etc.
     // that results in un-intended forward-backward motion when sideways motion is requested.
-    protected static double V_forward_V_side_bias = 0.0;
+    protected static final double V_forward_V_side_bias = 0.0;
     // After calibration this term represents the bias of the mecanum drive as a result of alignment, friction, etc.
-    // that results in un-intended tuen motion when sideways motion is requested.
-    protected static double V_turn_V_side_bias = 0.0;
+    // that results in un-intended turn motion when sideways motion is requested.
+    protected static final double V_turn_V_side_bias = 0.0;
 
     // The constants that regulate this program - adjust these to your physical
     // implementation of the drive.
-    protected static double mtr_accel_min = 0.3;
-    protected static double mtr_decel_min = 0.1;
-    protected static double mtr_accel_tics = 600.0;
-    protected static double mtr_decel_tics = 1200.0;
-    protected static double mtr_accel_degs = 20.0;
-    protected static double mtr_decel_degs = 30.0;
-    protected static double tics_per_inch_forward = 84.0;
-    protected static double tics_per_inch_sideways = 83.0;
+    protected static final double mtr_accel_min = 0.3;
+    protected static final double mtr_decel_min = 0.1;
+    protected static final double mtr_accel_tics = 600.0;
+    protected static final double mtr_decel_tics = 1200.0;
+    protected static final double mtr_accel_degs = 20.0;
+    protected static final double mtr_decel_degs = 30.0;
+    protected static final double tics_per_inch_forward = 84.0;
+    protected static final double tics_per_inch_sideways = 83.0;
+    // A turning rate when in automotive drive mode to limit the turn rate at full
+    // forward or backward speed.
+    protected static final double auto_turn_rate = 0.15;
 
     // tracking the heading of the robot
     protected double heading;             // the current heading of the robot
@@ -139,8 +142,6 @@ public class MecanumTraction extends TractionBase {
         imu_params.loggingEnabled = false;
         imu_0.initialize(imu_params);
         imu_1.initialize(imu_params);
-        //imu_0.startAccelerationIntegration(new Position(), new Velocity(), 100);
-        //imu_1.startAccelerationIntegration(new Position(), new Velocity(), 100);
         while (true) {
             if (imu_0.isGyroCalibrated() && imu_1.isGyroCalibrated()) {
                 break;
@@ -158,6 +159,9 @@ public class MecanumTraction extends TractionBase {
     public boolean supportsSideways() {
         return true;
     }
+
+    @Override
+    public double getAutoTurnRate() { return auto_turn_rate; }
 
     @Override
     public void setSpeeds(double forward, double sideways, double rotate) {
@@ -215,14 +219,25 @@ public class MecanumTraction extends TractionBase {
     // =================================================================================================================
     //
     // =================================================================================================================
+    /**
+     * Get the forward tics, which is the sum of the encoders for all
+     * motors. This is a start on redundancy (using all 4 encoders),
+     * however, if an encoder fails this will still not detect that.
+     */
     private double forward_tics() {
-        return (motor_rf.getCurrentPosition() + motor_lf.getCurrentPosition() +
-                motor_rr.getCurrentPosition() + motor_lr.getCurrentPosition());
+        return motor_rf.getCurrentPosition() + motor_lf.getCurrentPosition() +
+                motor_rr.getCurrentPosition() + motor_lr.getCurrentPosition();
     }
 
+    /**
+     * Get the sideways tics which is the sum if the encoders corrected
+     * for direction of rotation when moving sideways. This is a start on
+     * redundancy (using all 4 encoders), however, if an encoder fails
+     * this will still not detect that.
+     */
     private double sideways_tics() {
-        return ((motor_rr.getCurrentPosition() + motor_lf.getCurrentPosition()) -
-                (motor_rf.getCurrentPosition() + motor_lr.getCurrentPosition()));
+        return (motor_rr.getCurrentPosition() + motor_lf.getCurrentPosition()) -
+                (motor_rf.getCurrentPosition() + motor_lr.getCurrentPosition());
     }
 
     @Override
@@ -241,34 +256,19 @@ public class MecanumTraction extends TractionBase {
         double sideways_max_speed = Math.abs(sin * max_speed);
         double sideways_inches = sin * inches;
         double sideways_direction_mult = (sideways_inches > 0.0) ? 1.0 : -1.0;
-        if (forward_max_speed > sideways_max_speed) {
-            double forward_target_tics = tics_per_inch_forward * forward_inches *
-                    forward_direction_mult;
-            while (true) {
-                double current_forward_tics = forward_direction_mult * forward_tics();
-                if (current_forward_tics >= forward_target_tics) {
-                    break;
-                }
-                double speed_mult = power_accel_decel(current_forward_tics,
-                        forward_target_tics, mtr_accel_min,
-                        mtr_decel_min, mtr_accel_tics, mtr_decel_tics);
-                setSpeeds(forward_max_speed * speed_mult * forward_direction_mult,
-                        sideways_max_speed * speed_mult * sideways_direction_mult,
-                        0.0);
+        double target_tics = (forward_max_speed >= sideways_max_speed) ?
+                (tics_per_inch_forward * forward_inches * forward_direction_mult) :
+                (tics_per_inch_sideways * sideways_inches * sideways_direction_mult);
+        while (true) {
+            double current_tics = (forward_max_speed >= sideways_max_speed) ?
+                    (forward_tics() * forward_direction_mult) : (sideways_tics() * sideways_direction_mult);
+            if (current_tics > target_tics) {
+                break;
             }
-        } else {
-            double sideways_target_tics = tics_per_inch_sideways * sideways_inches * sideways_direction_mult;
-            while (true) {
-                double current_sideways_tics = sideways_direction_mult * sideways_tics();
-                if (current_sideways_tics >= sideways_target_tics) {
-                    break;
-                }
-                double speed_mult = power_accel_decel(current_sideways_tics, sideways_target_tics,
-                        mtr_accel_min, mtr_decel_min, mtr_accel_tics, mtr_decel_tics);
-                setSpeeds(forward_max_speed * speed_mult * forward_direction_mult,
-                        sideways_max_speed * speed_mult * sideways_direction_mult,
-                        0.0);
-            }
+            double speed_mult = power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_decel_min,
+                    mtr_accel_tics, mtr_decel_tics);
+            setSpeeds(forward_max_speed * speed_mult * forward_direction_mult,
+                    sideways_max_speed * speed_mult * sideways_direction_mult, 0.0);
         }
         setSpeeds(0.0, 0.0, 0.0);
     }

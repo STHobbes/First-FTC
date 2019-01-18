@@ -40,18 +40,19 @@ public abstract class TractionBase implements ITraction {
      * @param decel (double) The deceleration distance with power at
      *  current=target-decel being 1.0 and power at current=target being mtr_min.
      * @return (double) Returns the power that will be in the range
-     *  mtr_min to 1.0
+     *  of 0.0 to 1.0
      */
     protected double power_accel_decel(double current, double target,
                                      double mtr_accel_min, double mtr_decel_min,
                                      double accel, double decel) {
         if (current <= 0.0) {
-            // could happen if there was some robot motion (was hit or coasting)
-            // that confused the sensor/logic.
+            // Not yet at the expected start. This could happen if there was some robot
+            // motion (was hit or coasting) that confused the sensor/logic. In this
+            // case, move at the minimum power until the caller knows what's happening.
             return mtr_accel_min;
         } else if (current >= target) {
-            // could happen if there was some robot motion (was hit or coasting)
-            // that confused the sensor/logic.
+            // Past the expected target. This could happen if there was some robot motion
+            // (was hit or coasting) that confused the sensor/logic. In this case stop.
             return 0.0;
         }
         double mtr_tmp = 1.0;
@@ -64,7 +65,8 @@ public abstract class TractionBase implements ITraction {
             double mtr_tmp_2 = mtr_decel_min +
                     (1.0 - mtr_decel_min) * ((target - current) / decel);
             if (mtr_tmp_2 < mtr_tmp) {
-                // The deceleration is less than the acceleration or the 1.0 max.
+                // Could also be in the acceleration zone - in this case the deceleration
+                // value is less than the acceleration or the 1.0 default.
                 mtr_tmp = mtr_tmp_2;
             }
         }

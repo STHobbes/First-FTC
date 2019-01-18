@@ -19,13 +19,16 @@ public class SquareBotTraction extends TractionBase {
 
     // The constants that regulate this program - adjust these to your physical
     // implementation of the drive.
-    protected static double mtr_accel_min = 0.1;
-    protected static double mtr_decel_min = 0.05;
-    protected static double mtr_accel_tics = 3000.0;
-    protected static double mtr_decel_tics = 6000.0;
-    protected static double mtr_accel_degs = 30.0;
-    protected static double mtr_decel_degs = 60.0;
-    protected static double tics_per_inch_forward = 504.0;
+    protected static final double mtr_accel_min = 0.1;
+    protected static final double mtr_decel_min = 0.05;
+    protected static final double mtr_accel_tics = 3000.0;
+    protected static final double mtr_decel_tics = 6000.0;
+    protected static final double mtr_accel_degs = 30.0;
+    protected static final double mtr_decel_degs = 60.0;
+    protected static final double tics_per_inch_forward = 504.0;
+    // A turning rate when in automotive drive mode to limit the turn rate at full
+    // forward or backward speed.
+    protected static final double auto_turn_rate = 0.05;
 
     // tracking the heading of the robot
     double heading;             // the current heading of the robot
@@ -141,6 +144,9 @@ public class SquareBotTraction extends TractionBase {
     }
 
     @Override
+    public double getAutoTurnRate() {return auto_turn_rate; }
+
+    @Override
     public void setSpeeds(double forward, double sideways, double rotate) {
         // OK, sideways is ignored, so the maximum-minimum is the sum of the absolute values of forward and turn
         double scale = 1.0;
@@ -180,7 +186,7 @@ public class SquareBotTraction extends TractionBase {
     }
 
     // =================================================================================================================
-    //
+    // Autonomous movement support
     // =================================================================================================================
     private double forward_tics() {
         return (motor_rf.getCurrentPosition() + motor_lf.getCurrentPosition() +
