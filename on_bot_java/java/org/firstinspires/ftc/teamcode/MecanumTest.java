@@ -50,17 +50,17 @@ public class MecanumTest extends MecanumBase {
         }
       } else if (gamepad1.dpad_up) {
         // Move forward the calibration distance
-        move(calibration_distance, 0.0, 1.0);
+        move(calibration_distance, 0.0);
       } else if (gamepad1.dpad_down) {
         // Move backwards the calibration distance
-        move(-calibration_distance, 0.0, 1.0);
+        move(-calibration_distance, 0.0);
       } else if (gamepad1.dpad_right) {
         if (gamepad1.left_bumper) {
           // Rotate 90 clockwise
           rotate(90.0);
         } else {
           // Move right the calibration distance
-          move(calibration_distance, 90.0, 1.0);
+          move(calibration_distance, 90.0);
         }
       } else if (gamepad1.dpad_left) {
         if (gamepad1.left_bumper) {
@@ -68,14 +68,14 @@ public class MecanumTest extends MecanumBase {
           rotate(-90.0);
         } else {
           // Move left the calibration distance
-          move(calibration_distance, -90.0, 1.0);
+          move(calibration_distance, -90.0);
         }
       } else if (gamepad1.y) {
         // move in a 30 square rotated 30 degrees
-          move(12.0, 30.0, 1.0);
-          move(-12.0, -60.0, 1.0);
-          move(-12.0, 30.0, 1.0);
-          move(12.0, -60.0, 1.0);
+          move(12.0, 30.0);
+          move(-12.0, -60.0);
+          move(-12.0, 30.0);
+          move(12.0, -60.0);
       } else {
         last_drive_mode = drive_mode;
         telemetry.addData("drive mode", drive_modes[drive_mode]);

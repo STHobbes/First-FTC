@@ -35,15 +35,13 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   double mtr_decel_tics;
   double mtr_accel_degs;
   double mtr_decel_degs;
-  double current_tics;
-  double target_tics;
-  double direction_mult;
   Orientation angles;
   double heading;
   double heading_revs;
   float heading_raw_last;
   double start_heading;
   double mtr_decel_min;
+  double auto_turn_rate;
 
   /**
    * This function is executed when this Op Mode is selected from the Driver Station.
@@ -71,13 +69,14 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     mtr_decel_tics = 1200;
     mtr_accel_degs = 20;
     mtr_decel_degs = 30;
+    auto_turn_rate = 0.15;
     calibration_distance = 24;
     tics_per_inch_forward = 84;
     tics_per_inch_sideways = 83;
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
-    mtr_rf.setDirection(DcMotorSimple.Direction.FORWARD);
+    mtr_rf.setDirection(DcMotorSimple.Direction.REVERSE);
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
@@ -85,7 +84,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
-    mtr_lf.setDirection(DcMotorSimple.Direction.REVERSE);
+    mtr_lf.setDirection(DcMotorSimple.Direction.FORWARD);
     // You will have to determine which motor to reverse for your robot.
     // In this example, the right motor was reversed so that positive
     // applied power makes it move the robot in the forward direction.
@@ -117,21 +116,21 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
         break;
       } else if (gamepad1.b) {
         if (drive_mode == last_drive_mode) {
-          drive_mode = (drive_mode + 1) % 3;
+          drive_mode = (drive_mode + 1) % 5;
         }
       } else if (gamepad1.dpad_up) {
         // Move forward the calibration distance
-        forward(calibration_distance);
+        move(calibration_distance, 0);
       } else if (gamepad1.dpad_down) {
         // Move backwards the calibration distance
-        forward(-calibration_distance);
+        move(-calibration_distance, 0);
       } else if (gamepad1.dpad_right) {
         if (gamepad1.left_bumper) {
           // Rotate 90 clockwise
           rotate(90);
         } else {
           // Move right the calibration distance
-          sideways(calibration_distance);
+          move(calibration_distance, 90);
         }
       } else if (gamepad1.dpad_left) {
         if (gamepad1.left_bumper) {
@@ -139,7 +138,7 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
           rotate(-90);
         } else {
           // Move left the calibration distance
-          sideways(-calibration_distance);
+          move(calibration_distance, -90);
         }
       } else {
         last_drive_mode = drive_mode;
@@ -153,9 +152,15 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
         } else if (drive_mode == 1) {
           // right stick is forward/back and side-to-side with no rotation, left X is rotation.
           airplane_right();
-        } else {
+        } else if (drive_mode == 2) {
           // left stick is forward/back and side-to-side with no rotation, right X is rotation.
           airplane_left();
+        } else if (drive_mode == 3) {
+          // A little like a car, right stick is forward-backward and turn
+          auto_right();
+        } else {
+          // A little like a car, left stick is forward-backward and turn
+          auto_left();
         }
       }
       telemetry.update();
@@ -235,22 +240,15 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   /**
    * Describe this function...
    */
-  private void forward(double inches) {
-    reset_drive_encoders();
-    if (inches > 0) {
-      direction_mult = 1;
-    } else {
-      direction_mult = -1;
-    }
-    target_tics = tics_per_inch_forward * inches * direction_mult;
-    while (true) {
-      current_tics = (mtr_rf.getCurrentPosition() + mtr_lf.getCurrentPosition() + mtr_rr.getCurrentPosition() + mtr_lr.getCurrentPosition()) * direction_mult;
-      if (current_tics >= target_tics) {
-        break;
-      }
-      set_speeds(power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0, 0);
-    }
-    set_speeds(0, 0, 0);
+  private double forward_tics() {
+    return mtr_rf.getCurrentPosition() + mtr_lf.getCurrentPosition() + mtr_rr.getCurrentPosition() + mtr_lr.getCurrentPosition();
+  }
+
+  /**
+   * Describe this function...
+   */
+  private double sideways_tics() {
+    return (mtr_rr.getCurrentPosition() + mtr_lf.getCurrentPosition()) - (mtr_rf.getCurrentPosition() + mtr_lr.getCurrentPosition());
   }
 
   /**
@@ -260,6 +258,59 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
     // The deal here is that right stick is forward and sideways, left X is turn.
     telemetry.addData("drive mode", "airplane right");
     set_speeds(right_y, right_x, left_x);
+  }
+
+  /**
+   * Describe this function...
+   */
+  private void move(double inches, double degrees) {
+    double current_tics;
+    double target_tics;
+    double cos;
+    double sin;
+    double forward_max_speed;
+    double forward_inches;
+    double forward_direction_mult;
+    double sideways_max_speed;
+    double sideways_inches;
+    double sideways_direction_mult;
+    double speed_mult;
+
+    reset_drive_encoders();
+    sin = Math.sin(degrees / 180 * Math.PI);
+    cos = Math.cos(degrees / 180 * Math.PI);
+    forward_max_speed = Math.abs(cos);
+    forward_inches = cos * inches;
+    if (forward_inches > 0) {
+      forward_direction_mult = 1;
+    } else {
+      forward_direction_mult = -1;
+    }
+    sideways_max_speed = Math.abs(sin);
+    sideways_inches = sin * inches;
+    if (sideways_inches > 0) {
+      sideways_direction_mult = 1;
+    } else {
+      sideways_direction_mult = -1;
+    }
+    if (forward_max_speed >= sideways_max_speed) {
+      target_tics = tics_per_inch_forward * forward_inches * forward_direction_mult;
+    } else {
+      target_tics = tics_per_inch_sideways * sideways_inches * sideways_direction_mult;
+    }
+    while (true) {
+      if (forward_max_speed >= sideways_max_speed) {
+        current_tics = forward_tics() * forward_direction_mult;
+      } else {
+        current_tics = sideways_tics() * sideways_direction_mult;
+      }
+      if (current_tics >= target_tics) {
+        break;
+      }
+      speed_mult = power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_accel_tics, mtr_decel_tics);
+      set_speeds(forward_max_speed * speed_mult * forward_direction_mult, sideways_max_speed * speed_mult * sideways_direction_mult, 0);
+    }
+    set_speeds(0, 0, 0);
   }
 
   /**
@@ -297,39 +348,36 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
   /**
    * Describe this function...
    */
-  private void sideways(double inches) {
-    reset_drive_encoders();
-    if (inches > 0) {
-      direction_mult = 1;
-    } else {
-      direction_mult = -1;
-    }
-    target_tics = tics_per_inch_sideways * inches * direction_mult;
-    while (true) {
-      current_tics = ((mtr_rr.getCurrentPosition() + mtr_lf.getCurrentPosition()) - (mtr_rf.getCurrentPosition() + mtr_lr.getCurrentPosition())) * direction_mult;
-      if (current_tics >= target_tics) {
-        break;
-      }
-      set_speeds(0, power_accel_decel(current_tics, target_tics, mtr_accel_min, mtr_accel_tics, mtr_decel_tics) * direction_mult, 0);
-    }
-    set_speeds(0, 0, 0);
+  private void auto_right() {
+    // A little like a car, right stick is forward-backward and turn
+    telemetry.addData("drive mode", "auto right");
+    set_speeds(right_y, left_x, right_x + right_x * right_y * (auto_turn_rate - 1));
   }
 
   /**
    * Describe this function...
    */
-  private void set_speeds(double forward2, double sideways2, double rotation) {
+  private void auto_left() {
+    // A little like a car, left stick is forward-backward and turn
+    telemetry.addData("drive mode", "auto left");
+    set_speeds(left_y, right_x, left_x + left_x * left_y * (auto_turn_rate - 1));
+  }
+
+  /**
+   * Describe this function...
+   */
+  private void set_speeds(double forward, double sideways, double rotation) {
     double max;
 
     scale = 1;
-    max = Math.abs(forward2) + Math.abs(sideways2) + Math.abs(rotation);
+    max = Math.abs(forward) + Math.abs(sideways) + Math.abs(rotation);
     if (max > 1) {
       scale = 1 / max;
     }
-    power_rf = scale * (forward2 - (sideways2 + rotation));
-    power_rr = scale * (forward2 + (sideways2 - rotation));
-    power_lf = scale * (forward2 + sideways2 + rotation);
-    power_lr = scale * (forward2 - (sideways2 - rotation));
+    power_rf = scale * (forward - (sideways + rotation));
+    power_rr = scale * (forward + (sideways - rotation));
+    power_lf = scale * (forward + sideways + rotation);
+    power_lr = scale * (forward - (sideways - rotation));
     set_power();
   }
 
@@ -362,6 +410,9 @@ public class MecanumDriveExampleOrig extends LinearOpMode {
    * Describe this function...
    */
   private void turn(double degrees) {
+    double direction_mult;
+
+    reset_drive_encoders();
     if (degrees > 0) {
       direction_mult = 1;
     } else {

@@ -1,7 +1,7 @@
 # First-FTC
 
 * status: Release
-* version: 0.90 - All the basic programming principles for drive are here.
+* version: 0.90 - All the basic programming principles for tractions are here.
 * TODO: The final versions are all in the android programming directory (ftc-app). Not all of these have been
   back-ported to blocks and on-bot-java (I will get to that).
 
@@ -22,10 +22,9 @@ be used to drive the robot and build the autonomous
 program. This project is all about the software implementation of driver control and move functions.
 
 The selection of physical implementation from most simple is:
-* **traction tires**: 4 traction tires with a fixed tread. Left side and right side may each be driven
-  by a single motor or
-  there may be one motor per wheel. Motion supported by this implementation is forward-backward and rotation. The
-  center for rotation is the centroid of the drive wheels.
+* **traction tires**: 4 traction tires with a fixed tread - this is the *squarebot*. Left side and right side may
+  each be driven by a single motor or there may be one motor per wheel. Motion supported by this implementation is
+  forward-backward and rotation. The center for rotation is the centroid of the drive wheels.
 * **traction plus omni**: 2 traction tires, 2 omni tires. The omni tires may be either front or back. Omni tires reduce
   friction when turning, and move the center of rotation between the traction tires. The omni wheels have rollers
   mounted around their circumference that are coaxial with the plane of the wheel.
@@ -40,8 +39,62 @@ competition, and easy to reliably program the autonomous operation of the robot.
 
 ## General Programming Notes
 
+I'm trying to build example code for each of the traction types listed above. The objective is to abstract
+the operation of the traction to a couple simple methods supporting different drive paradigms, and
+a couple simple methods that can be used for building the autonomous OpMode; all described later in
+this section.
+
 ### Organization
- 
+
+This repository is organized into 3 main areas:
+* **blocks** - Contains the blocks code downloaded from the blocks programming environment, which can be
+  uploaded to your blocks programming environment. There is (or will be) a
+  blocks program for each of the tractions that handles the function of the test program described in **on_bot_java**.
+  The blocks program will have a name like *traction*_drive_example.blk where *traction* is the type of traction, i.e.
+  the blocks program for mecanum wheels will have a name like `mecanum_drive_example.blk`
+* **on_bot_java/java/org/firstinspires/ftc/teamcode/** - The Java code downloaded from the OnBotJava programming
+  environment, which can be uploaded
+  to your OnBotJava programming environment. For each traction, there will be 2 programs that come directly from
+  the blocks program:
+  * ***Traction*DriveExampleOrig.java** - The blocks file as it was automatically translated to Java by the block
+    programming environment with minor problems (usually variable types) fixed.
+  * ***Traction*DriveExample.java** - A cleanup of *Traction*DriveExampleOrig.java to follow better Java
+    programming practices.
+    
+  Then there will be a more Java approach that pulls the common drive functionality into a base class
+  * ***Traction*Base.java** - a base class for the *traction*.
+  
+  Then there will test and autonomous programs that can be run using any of the *Traction*Base.java classes as it's
+  base class (a one line change), all currently supported *traction*s are included in commented code.
+  * **TractionTest** - Implements a number of different driver control paradigms to help you in determining which
+    is the best match for your competition and driver. Implements buttons that run autonomous move and rotate
+    functions to help you calibrate and tune the variables that control your traction.
+  * **TractionAuto** - A simple autonomous program that should move your robot along the same path regardless
+    of the traction you use.
+* **ftc_app/java/org/firstinspires/ftc/teamcode/** - focuses on demonstrating how you can make the drive a
+  component using an interface. I find this approach more flexible as a class can implement many interfaces while
+  class can only extend a single class. This is specifically useful when I have multiple robots (both a prototype and
+  a competition robot) and I want to work on and test my competition programming using either robot. The key here is
+  that we define an interface to the drive, and a class implementing that interface for any physical drive (a traction
+  component for that drive). In the competition or test programs we simply load the correct traction component for
+  the robot, and the robot should do the same thing regardless of the base.
+  * **ITraction.java** - The interface for a traction component. This is simplified from the **on_bot_java** in that there
+    are minimal methods: `initialize()` and `postStartInitialize()` for traction initialization; `supportsSideways()`
+    for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
+    control; and `move()` and `rotate()` and autonomous traction operations.
+  * **TractionBase.java** - A base implementation that has the acceleration-deceleration ramp method, and default
+    implementations of `supportsSideways()` and `move()` for a simple traction that supports forward-backward
+    motion and not sideways.
+    
+  Then there will test and autonomous programs that can be run using any of the ITraction.java implementations as
+  the traction is loaded at initialization (a one line change), all currently supported ITraction
+  implementations are included in commented code.
+  * **TractionTest** - Implements a number of different driver control paradigms to help you in determining which
+    is the best match for your competition and driver. Implements buttons that run autonomous move and rotate
+    functions to help you calibrate and tune the variables that control your traction.
+  * **TractionAuto** - A simple autonomous program that should move your robot along the same path regardless
+    of the traction you use.
+
 ### The control mode paradigm
 
 Most simple programming examples use *tank* mode where the right and left stick Y are directly mapped to the left and
@@ -99,35 +152,24 @@ fine control, and training drivers to use it when they need fine control - see *
 Theses are programming notes for the simple *SquareBot* described earlier. For this exercise I built a small
 *SquareBot* using REV motors and traction wheels.
 
-These are the sample programs for the traction wheel **SquareBot**:
-* **blocks** - The blocks example is not yet back-ported.
-* **on_bot_java** - The OnBotJava example is not yet back-ported.
-* **ftc_app/java/org/firstinspires/ftc/teamcode/** - focuses on demonstrating how you can make the drive a
-  component that you load at runtime. This is specifically useful when I have multiple robots (both a prototype and
-  a competition robot) and I want to work on and test my competition programming using either robot. The key here is
-  that we define an interface to the drive, and a class implementing that interface for any physical drive (a traction
-  component for that drive). In the competition or test programs we simply load the correct traction component for
-  the robot, and the robot should do the same thing regardless of the base.
-  * **ITraction** - The interface for a traction component. This is simplified from the **on_bot_java** in that there
-    are minimal methods: `initialize()` and `postStartInitialize()` for traction initialization; `supportsSideways()`
-    for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
-    control; and `move()` and `rotate()` and autonomous traction operations.
-    * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
-      implementations of `supportsSideways()` and `move()`for a simple traction that supports forward-backward
-      motion and not sideways.
-      * **SquareBotTraction** - The implementation for the HRVHS **SquareBot** using encoders.
-      * **SquareBotPidTraction** - The implementation for the HRVHS **SquareBot** .
-  * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
-  * **TractionAuto** - An autonomous test program that runs any **ITraction** implementation through an
-    autonomous move sequence.
-
+*SquareBot*-specific programs are :
+* **blocks/squarebot_drive_example.blk**
+* **on_bot_java/java/org/firstinspires/ftc/teamcode/**
+  * **SquareBotDriveExampleOrig.java**
+  * **SquareBotDriveExample.java**
+  * **SquareBotBase.java** - a base class for the *SquareBot*.
+* **ftc_app/java/org/firstinspires/ftc/teamcode/**
+    * **TractionBase** extensions:
+      * **SquareBotTraction** - The implementation for the **SquareBot** using encoders and motor speed.
+      * **SquareBotPidTraction** - The implementation for the **SquareBot**  using encoders, motor speed,
+        and a PID loop to adjust heading.
 ## Traction plus Omni Wheels
 
-*TODO*
+*To be completed spring 2019*
 
 ## Omni Wheels Only
 
-*TODO*
+*To be completed spring 2019*
 
 ## Mecanum Wheels
 
@@ -139,43 +181,15 @@ with traction wheels. The physical implementation this code was written for uses
 [mecanum wheels](https://www.amazon.com/100Mm-Aluminum-Mecanum-Wheel-Right/dp/B01CTUT4GY/ref=sr_1_1)
 driven by [Rev core hex](http://www.revrobotics.com/rev-41-1300/) motors
  
-These are the sample programs for mecanum wheels:
-* **blocks/mecanum_drive_example.blk** - Running the mecanum wheels from blocks with all the controller options
-  described above. While blocks are easy to program, it is the case that if there are multiple topologies for
-  autonomous in addition to the TeleOp there will be multiple blocks programs for the competition. It is difficult
-  to keep multiple blocks programs in sync when there are changes to the base robot.
-* **on_bot_java/java/org/firstinspires/ftc/teamcode/** - programs that can be uploaded to OnBotJava
-  * **MecanumDriveExampleOrig** - The OnBotJava version of the blocks program as it is originally
-    translated from the blocks program.
-  * **MecanumDriveExample** - Simplifying the above program by using some Java constructs that are
-    not well supported in blocks.
-  * **MecanumBase** - a base class extracted from the **MecanumDriveExample**. Building a base class for your robot
-    lets you put all the common robot-specific code in one place so you can respond to changes in the robot by
-    adjusting the base class.
-    * **MecanumTest** - this is the **MecanumDriveExample** runOpMode implemented as an extension of **MecanumBase**
-    * **MecanumTeleOp** - this is a runOpMode implemented as an extension of **MecanumBase** that would be the
-      starting point for building the driver control program. It uses the airplane right driver control and does
-      not support the other drive modes.
-    * **MecanumAuto** - this is the **MecanumDriveExample** runOpMode implemented as an extension of **MecanumBase**
-      that runs an autonomous test pattern, and could be easily customized for a specific game topology. NOTE: This
-      autonomous pattern takes longer than the 30sec competition limit to run - so turn the timer off if you run this.
-* **ftc_app/java/org/firstinspires/ftc/teamcode/** - focuses on demonstrating how you can make the drive a
-  component that you load at runtime. This is specifically useful when I have multiple robots (both a prototype and
-  a competition robot) and I want to work on and test my competition programming using either robot. The key here is
-  that we define an interface to the drive, and a class implementing that interface for any physical drive (a traction
-  component for that drive). In the competition or test programs we simply load the correct traction component for
-  the robot, and the robot should do the same thing regardless of the base.
-  * **ITraction** - The interface for a traction component. This is simplified from the **on_bot_java** in that there
-    are minimal methods: `initialize()` and `postStartInitialize()` for traction initialization; `supportsSideways()`
-    for capability; `setSpeeds()` and `setTankSpeeds()` for setting motor speeds in ether driver or autonomous
-    control; and `move()` and `rotate()` and autonomous traction operations.
-    * **TractionBase** - A base implementation that has the acceleration-deceleration ramp method, and default
-      implementations of `supportsSideways()` and `move()`for a simple traction that supports forward-backward
-      motion and not sideways.
+Mecanum-specific programs are:
+* **blocks/mecanum_drive_example.blk**
+* **on_bot_java/java/org/firstinspires/ftc/teamcode/**:
+  * **MecanumDriveExampleOrig.java**
+  * **MecanumDriveExample.java**
+  * **MecanumBase** - a base for the mecanum wheels
+* **ftc_app/java/org/firstinspires/ftc/teamcode/**
+    * **TractionBase** extensions:
       * **MecanumTraction** - The implementation for the mecanum physical traction using encoders and motor speed.
       * **MecanumPidTraction** - The implementation for the mecanum physical traction using encoders, motor speed,
         and a PID loop to adjust heading.
-  * **TractionTest** - A test program that can be used with any implementation of **ITraction**.
-  * **TractionAuto** - An autonomous test program that runs any **ITraction** implementation through an
-    autonomous move sequence.
 
