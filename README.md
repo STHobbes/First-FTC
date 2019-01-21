@@ -137,15 +137,16 @@ In all of the example programs there is a test drive program with these controls
 
 ### Controlling Sensitivity
 
-Robots need to get somewhere on the playing field quickly. Then they need to do something. We have often seen robots
+We have often seen robots
 getting to *about the right place* in seconds, and then taking 10's of seconds fumbling around because they have
 extended an arm and need to move it left an inch, but any turn moves the arm 6" so a dozen moves are required
-before the arm fortunately stops in the right place.
+before the arm fortunately stops in the right place.Robots need to get somewhere on the playing field
+quickly. Then they need to do something, often with precision. 
 
 The problem has 2 primary causes:
 * The control sticks are designed for *twitch* games - fast extreme motion is more important than fine control and
-  there is very sensitivity in the joysticks, i.e. there is very littles distance between 0 and full speed when
-  you move the stick..
+  the joysticks are very sensitive, i.e. there is very little distance between 0 and full speed when
+  you move the stick.
 * Loop speeds - the time between when you make a command and when the robot responds is potentially long and
   is highly variable (i.e. the drive program is a loop and there is a lag between when the driver takes an action
   and the program/robot responds to the action because of loop time), which results in over-control. Specifically,

@@ -28,7 +28,7 @@ public class SquareBotTraction extends TractionBase {
     protected static final double tics_per_inch_forward = 504.0;
     // A turning rate when in automotive drive mode to limit the turn rate at full
     // forward or backward speed.
-    protected static final double auto_turn_rate = 0.05;
+    protected static final double auto_turn_rate = 0.10;
 
     // tracking the heading of the robot
     double heading;             // the current heading of the robot
