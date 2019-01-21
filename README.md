@@ -150,8 +150,8 @@ The problem has 2 primary causes:
   is highly variable (i.e. the drive program is a loop and there is a lag between when the driver takes an action
   and the program/robot responds to the action because of loop time), which results in over-control. Specifically,
   the driver asks for small motion, does not see immediate response, and then asks for more motion, and by the
-  time the robot responds, the user is asking for extre- and the robot responds with motion way faster and more
-  extreme than desired.
+  time the robot responds, the user is asking for extreme movement and the robot responds with more
+  extreme motion than desired.
   
 We have tried different functions like controller position squared or cubed to try to get more sensitivity around 0,
 and have concluded that it is the long loop time that causes the majority of fine control problems. The only reasonable
