@@ -187,16 +187,14 @@ Theses are programming notes for the simple *SquareBot* described earlier. For t
 
 ## Mecanum Wheels
 
-With mecanum wheels we have found that the motion of the robot changes when the balance of the robot changes. For
-example, if the robot is very front heavy it will tend to rotate clockwise when moving right and counterclockwise
-when moving left. Also, if the wheel mounting is not rigid (wheel axles supported on both ends), this will
-affect movement. The robot will also be easier to displace (move or rotate) if struck by other robots than a robot
-with traction wheels. The physical implementation this code was written for uses these
-[mecanum wheels](https://www.amazon.com/100Mm-Aluminum-Mecanum-Wheel-Right/dp/B01CTUT4GY/ref=sr_1_1)
-driven by [Rev core hex](http://www.revrobotics.com/rev-41-1300/) motors.
- 
+See [Mecanum Traction Notes](./mecanum.md) for a deep dive on mecanum wheels.
+
 Mecanum-specific programs are:
-* **blocks/mecanum_drive_example.blk**
+* **blocks/**:
+  * **mecanum_drive_example.blk**: a basic test program for mecanum wheels
+  * **mecanum_drive_pid_example.blk**: the basic test with heading adjustment PID
+  * **mecanum_pid_airplane.blk**: the start of driver control with tank or airplane(arcade) using a
+    heading adjustment PID.
 * **on_bot_java/java/org/firstinspires/ftc/teamcode/**:
   * **MecanumDriveExampleOrig.java**
   * **MecanumDriveExample.java**
